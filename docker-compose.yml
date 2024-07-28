@@ -1,0 +1,69 @@
+version: '3'
+
+services:
+
+  app:
+    build: .
+    image: laravel-docker
+    container_name: laravel-docker
+    restart: unless-stopped
+    tty: true
+    environment:
+      - SERVICE_NAME=APP
+    working_dir: /var/www/laravel-docker
+    volumes:
+      - .:/var/www/laravel-docker
+      - ./storage/php.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - docker-laravel
+
+  webserver:
+    image: nginx:alpine
+    container_name: nginx-laravel-docker
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 80:80
+    volumes:
+      - .:/var/www/laravel-docker
+      - ./storage:/etc/nginx/conf.d/
+    networks:
+      - docker-laravel
+
+  database:
+    image: mysql:5.7
+    container_name: db-laravel-docker
+    restart: always
+    tty: true
+    ports:
+        - 3306:3306
+    volumes:
+      - lbdata:/var/lib/mysql
+    environment:
+      - MYSQL_PASSWORD=admin
+      - MYSQL_ROOT_PASSWORD=admin
+      - SERVICE_NAME=mysql
+      - SERVICE_TAGS=dev
+    networks:
+        - docker-laravel
+
+### OPTIONAL ### 
+  phpmyadmin:
+    container_name: pmalaravel
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    links:
+      - database
+    ports:
+      - 81:80
+    networks:
+      - docker-laravel
+### OPTIONAL ###
+
+volumes:
+  lbdata:
+    driver: local
+
+networks:
+  docker-laravel:
+    driver: bridge
